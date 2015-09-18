@@ -1,5 +1,9 @@
 #coding:utf-8
 #Copyright (c) 2015 zhaoming@xiachufang.com All rights reserved.
+import gevent
+from gevent import monkey
+gevent.monkey.patch_all()
+from gevent.pool import Group
 import decimal
 import sys
 import os
@@ -9,8 +13,6 @@ import time
 import simplejson as json
 import datetime
 import logging
-import gevent
-from gevent.pool import Group
 
 hs = requests.Session()
 s = requests.Session()
