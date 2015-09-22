@@ -61,7 +61,6 @@ def show_result():
 
 def main():
     midurl = '://www.xiachufang.com/'
-    n=0
     for n, line in enumerate(open('res')):
         line = line.strip()
         g1 = gevent.spawn(func, result['https'],        'https' + midurl + line, None)
@@ -74,8 +73,6 @@ def main():
         group.add(g4)
         group.join()
         print n
-        n+=1
-        if n > 4: break
     show_result()
 
 main()
