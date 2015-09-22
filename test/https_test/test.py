@@ -15,11 +15,6 @@ from gevent.pool import Group
 hs = requests.Session()
 s = requests.Session()
 
-
-http_res = [0,]
-https_res = [0,]
-sess_http_res = [0,]
-sess_https_res = [0,]
 result = {
             'http': [],
             'https': [],
@@ -37,26 +32,28 @@ def get_request(url, payload=None, time_out=10, sess=None):
         else:
             r = sess.request('GET', url, data=payload, timeout=time_out)
     except:
-        return 400, 0
+        return 400, 0, 0, 0
 
     used = int((time.time() - clk) * 1000)
     #open('css', 'w').write(r.text.encode('UTF-8'))
     #print 'status:', r.status_code, 'used: ', used
     if r.status_code != 200: print unicode(r.text), str(sess)
-    return r.status_code, len(r.text), used
+    return r.status_code, len(r.text), used, len(r.text)*1000/used
 
 def func(lst, url, sess):
-    st, l, t = get_request(url, sess=sess)
-    #print url, st, t
+    st, l, t, weight = get_request(url, sess=sess)
+    print url, st, t, sess
     if st != 200:
         return
-    lst.append((l, t))
+    lst.append((l, t, weight))
 
 def show_result():
-    print result
+    #print result
     for (k, v) in result.items():
+        v = sorted(v, key = lambda e: e[2], reverse=True)
+        v = v[:-100]
         byte, time = reduce(lambda x,y :  (x[0]+y[0], x[1]+y[1]), v)
-        print "%s avg_time:%d avg_size:%d avg_time_100kb:%d" % (k, time/len(v), byte/len(v), time/(byte/1024))
+        print "%s avg_time:%d avg_size:%d" % (k, time/len(v), byte/len(v))
 
 
 def main():
@@ -73,6 +70,7 @@ def main():
         group.add(g4)
         group.join()
         print n
+        #if n > 10: break
     show_result()
 
 main()
