@@ -4,6 +4,7 @@ import gevent
 from gevent import monkey
 gevent.monkey.patch_all()
 from gevent.pool import Group
+from gevent.queue import Queue
 import decimal
 import sys
 import os
@@ -43,12 +44,14 @@ def get_request(url, payload=None, time_out=10, sess=None):
     if r.status_code != 200: print unicode(r.text), str(sess)
     return r.status_code, len(r.text), used, len(r.text)*1000/used
 
-def func(lst, url, sess):
-    st, l, t, weight = get_request(url, sess=sess)
-    print url, st, t, sess
-    if st != 200:
-        return
-    lst.append((l, t, weight))
+def func(queue):
+    while True:
+        lst, url, sess = queue.get()
+        st, l, t, weight = get_request(url, sess=sess)
+        print url, st, t, sess
+        if st != 200:
+            continue
+        lst.append((l, t, weight))
 
 def show_result():
     #print result
@@ -66,17 +69,15 @@ def signal_proc(a, b):
 def main():
     signal.signal(signal.SIGINT, signal_proc)
     midurl = '://www.xiachufang.com/'
+    queue = Queue(4)
+    g = gevent.spawn(func, queue)
+    g.start()
     for n, line in enumerate(open('res')):
         line = line.strip()
-        g1 = gevent.spawn(func, result['https'],        'https' + midurl + line, None).join()
-        g2 = gevent.spawn(func, result['https_sess'],   'https' + midurl + line, hs).join()
-        g3 = gevent.spawn(func, result['http'],         'http' + midurl + line, None).join()
-        g4 = gevent.spawn(func, result['http_sess'],    'http' + midurl + line, s).join()
-        #group.add(g1)
-        #group.add(g2)
-        #group.add(g3)
-        #group.add(g4)
-        #group.join()
+        queue.put([result['https'],        'https' + midurl + line, None])
+        queue.put([result['https_sess'],   'https' + midurl + line, hs])
+        queue.put([result['http'],         'http' + midurl + line, None])
+        queue.put([result['http_sess'],    'http' + midurl + line, s])
         print n
         #if n > 10: break
     show_result()
