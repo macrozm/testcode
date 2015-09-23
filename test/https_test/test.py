@@ -13,6 +13,7 @@ import time
 import simplejson as json
 import datetime
 import logging
+import signal
 
 hs = requests.Session()
 s = requests.Session()
@@ -53,24 +54,29 @@ def show_result():
     #print result
     for (k, v) in result.items():
         v = sorted(v, key = lambda e: e[2], reverse=True)
-        v = v[:-100]
+        if len(v) > 500:
+            v = v[:-100]
         byte, time = reduce(lambda x,y :  (x[0]+y[0], x[1]+y[1]), v)
         print "%s avg_time:%d avg_size:%d" % (k, time/len(v), byte/len(v))
 
+def signal_proc(a, b):
+    show_result()
+    os._exit(0)
 
 def main():
+    signal.signal(signal.SIGINT, signal_proc)
     midurl = '://www.xiachufang.com/'
     for n, line in enumerate(open('res')):
         line = line.strip()
-        g1 = gevent.spawn(func, result['https'],        'https' + midurl + line, None)
-        g2 = gevent.spawn(func, result['https_sess'],   'https' + midurl + line, hs)
-        g3 = gevent.spawn(func, result['http'],         'http' + midurl + line, None)
-        g4 = gevent.spawn(func, result['http_sess'],    'http' + midurl + line, s)
-        group.add(g1)
-        group.add(g2)
-        group.add(g3)
-        group.add(g4)
-        group.join()
+        g1 = gevent.spawn(func, result['https'],        'https' + midurl + line, None).join()
+        g2 = gevent.spawn(func, result['https_sess'],   'https' + midurl + line, hs).join()
+        g3 = gevent.spawn(func, result['http'],         'http' + midurl + line, None).join()
+        g4 = gevent.spawn(func, result['http_sess'],    'http' + midurl + line, s).join()
+        #group.add(g1)
+        #group.add(g2)
+        #group.add(g3)
+        #group.add(g4)
+        #group.join()
         print n
         #if n > 10: break
     show_result()
