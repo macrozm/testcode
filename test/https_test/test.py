@@ -41,14 +41,19 @@ def get_request(url, payload=None, time_out=10, sess=None):
     used = int((time.time() - clk) * 1000)
     #open('css', 'w').write(r.text.encode('UTF-8'))
     #print 'status:', r.status_code, 'used: ', used
-    if r.status_code != 200: print unicode(r.text), str(sess)
-    return r.status_code, len(r.text), used, len(r.text)*1000/used
+    if r.status_code != 200: return 400, 0, 0, 0
+    if r.raw.seekable():
+        r.raw.seek(2)
+        length = r.raw.tell()
+    else:
+        length = int(r.headers.get('content-length', 0)) or len(r.content)
+    return r.status_code, length, used, length*1000/used
 
 def func(queue):
     while True:
         lst, url, sess = queue.get()
         st, l, t, weight = get_request(url, sess=sess)
-        print url, st, t, sess
+        print url, st, t, weight, sess
         if st != 200:
             continue
         lst.append((l, t, weight))
