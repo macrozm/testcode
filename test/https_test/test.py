@@ -87,4 +87,22 @@ def main():
         #if n > 10: break
     show_result()
 
-main()
+def test_https():
+    signal.signal(signal.SIGINT, signal_proc)
+    midurl='://reformation.xiachufang.com/'
+    queue = Queue(4)
+    g = gevent.spawn(func, queue)
+    g.start()
+    for n, line in enumerate(open('res')):
+        line = ''
+        queue.put([result['https'],        'https' + midurl + line, None])
+        queue.put([result['https_sess'],   'https' + midurl + line, hs])
+        queue.put([result['http'],         'http' + midurl + line, None])
+        queue.put([result['http_sess'],    'http' + midurl + line, s])
+        print n
+        #if n > 10: break
+    show_result()
+
+test_https()
+
+#main()
